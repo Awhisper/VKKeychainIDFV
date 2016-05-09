@@ -27,6 +27,6 @@ idfv是苹果后来提供的用于识别设备唯一标识的方案之一（注�
 
 导入文件
 
-`include "UIDevice+VKKeychainIDFV.h"`
+`import "UIDevice+VKKeychainIDFV.h"`
 
 `NSString* idfv = [UIDevice VKKeychainIDFV];`
