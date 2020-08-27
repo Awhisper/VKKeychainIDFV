@@ -73,11 +73,11 @@
     //Get search dictionary
     NSMutableDictionary *keychainQuery = [self VKgetKeychainQuery:service];
     //Delete old item before add new item
-    SecItemDelete((__bridge_retained CFDictionaryRef)keychainQuery);
+    SecItemDelete((__bridge CFDictionaryRef)keychainQuery);
     //Add new object to search dictionary(Attention:the data format)
     [keychainQuery setObject:[NSKeyedArchiver archivedDataWithRootObject:data] forKey:(__bridge_transfer id)kSecValueData];
     //Add item to keychain with the search dictionary
-    SecItemAdd((__bridge_retained CFDictionaryRef)keychainQuery, NULL);
+    SecItemAdd((__bridge CFDictionaryRef)keychainQuery, NULL);
 }
 
 - (id)load:(NSString *)service {
@@ -87,7 +87,7 @@
     [keychainQuery setObject:(id)kCFBooleanTrue forKey:(__bridge_transfer id)kSecReturnData];
     [keychainQuery setObject:(__bridge_transfer id)kSecMatchLimitOne forKey:(__bridge_transfer id)kSecMatchLimit];
     CFDataRef keyData = NULL;
-    if (SecItemCopyMatching((__bridge_retained CFDictionaryRef)keychainQuery, (CFTypeRef *)&keyData) == noErr) {
+    if (SecItemCopyMatching((__bridge CFDictionaryRef)keychainQuery, (CFTypeRef *)&keyData) == noErr) {
         @try {
             ret = [NSKeyedUnarchiver unarchiveObjectWithData:(__bridge_transfer NSData *)keyData];
         } @catch (NSException *e) {
@@ -100,6 +100,6 @@
 
 - (void)VKdelete:(NSString *)service {
     NSMutableDictionary *keychainQuery = [self VKgetKeychainQuery:service];
-    SecItemDelete((__bridge_retained CFDictionaryRef)keychainQuery);
+    SecItemDelete((__bridge CFDictionaryRef)keychainQuery);
 }
 @end
