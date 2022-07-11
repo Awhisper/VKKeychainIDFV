@@ -21,8 +21,7 @@
 
     if (idfv && idfv.length > 0 && [idfv isKindOfClass:[NSString class]]) {
         return idfv;
-    }else
-    {
+    } else {
         NSString *idfv = [[self identifierForVendor] UUIDString];
         idfv = [idfv stringByReplacingOccurrencesOfString:@"-" withString:@""];
         [self VKsaveIdfvToKeyChain:idfv];
@@ -72,12 +71,25 @@
 - (void)VKsave:(NSString *)service data:(id)data {
     //Get search dictionary
     NSMutableDictionary *keychainQuery = [self VKgetKeychainQuery:service];
+
+    //Temp Value(Pervious) during bridging between CoreFoundation and Foundation 
+    CFDictionaryRef tmpQuery = (__bridge_retained CFDictionaryRef)keychainQuery;
+
     //Delete old item before add new item
-    SecItemDelete((__bridge_retained CFDictionaryRef)keychainQuery);
+    SecItemDelete(tmpQuery);
+
     //Add new object to search dictionary(Attention:the data format)
     [keychainQuery setObject:[NSKeyedArchiver archivedDataWithRootObject:data] forKey:(__bridge_transfer id)kSecValueData];
+
+    //Temp Value(Latest) during bridging between CoreFoundation and Foundation 
+    tmpQuery = (__bridge_retained CFDictionaryRef)keychainQuery;
+
     //Add item to keychain with the search dictionary
-    SecItemAdd((__bridge_retained CFDictionaryRef)keychainQuery, NULL);
+    SecItemAdd(tmpQuery, NULL);
+
+    //Cleanup Resources
+    [keychain removeAllObjects];
+    if (tmpQuery != nil) {  CFRelease(tmpQuery);  }
 }
 
 - (id)load:(NSString *)service {
@@ -87,7 +99,8 @@
     [keychainQuery setObject:(id)kCFBooleanTrue forKey:(__bridge_transfer id)kSecReturnData];
     [keychainQuery setObject:(__bridge_transfer id)kSecMatchLimitOne forKey:(__bridge_transfer id)kSecMatchLimit];
     CFDataRef keyData = NULL;
-    if (SecItemCopyMatching((__bridge_retained CFDictionaryRef)keychainQuery, (CFTypeRef *)&keyData) == noErr) {
+    CFDictionaryRef tmpQuery = (__bridge_retained CFDictionaryRef)keychainQuery;
+    if (SecItemCopyMatching(tmpQuery, (CFTypeRef *)&keyData) == noErr) {
         @try {
             ret = [NSKeyedUnarchiver unarchiveObjectWithData:(__bridge_transfer NSData *)keyData];
         } @catch (NSException *e) {
@@ -95,11 +108,16 @@
         } @finally {
         }
     }
+    [keychainQuery removeAllObjects];
+    if (tmpQuery != nil) {  CFRelease(tmpQuery);  }
     return ret;
 }
 
 - (void)VKdelete:(NSString *)service {
     NSMutableDictionary *keychainQuery = [self VKgetKeychainQuery:service];
-    SecItemDelete((__bridge_retained CFDictionaryRef)keychainQuery);
+    CFDictionaryRef tmpQuery = (__bridge_retained CFDictionaryRef)keychainQuery;
+    SecItemDelete(tmpQuery);
+    [keychainQuery removeAllObjects];                   // Management based on ARC.
+    if (tmpQuery != nil) {  CFRelease(tmpQuery);  }     // Dealloc core-foundation object.
 }
 @end
